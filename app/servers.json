@@ -1,0 +1,14 @@
+{
+  "Servers": {
+    "1": {
+      "Name": "Service Lasso PostgreSQL",
+      "Group": "Service Lasso",
+      "Port": 8500,
+      "Username": "postgres",
+      "Host": "localhost",
+      "SSLMode": "prefer",
+      "MaintenanceDB": "postgres",
+      "Service": "service-lasso-postgresql"
+    }
+  }
+}

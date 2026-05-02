@@ -1,130 +1,53 @@
-# service-template
+# lasso-pgadmin4
 
-_Status: starter template repo_
+`lasso-pgadmin4` packages pgAdmin 4 as a Service Lasso managed service.
 
-`service-template` is the canonical starting point for new Service Lasso service repos.
+It is intended for apps that already include a PostgreSQL service manifest, usually from [`service-lasso/lasso-postgres`](https://github.com/service-lasso/lasso-postgres), and want a local browser UI for inspecting databases.
 
-Use this repo when you want to create a new service repo that already has:
-- the expected service repo layout
-- a starter `service.json`
-- a starter `services/` inventory example for app/reference repos that embed Service Lasso
-- starter packaging scripts
-- starter verify scripts and harness contract shape
-- starter docs for service contract, packaging, and validation
-- starter CI scaffolding
+## Service Contract
 
-## Use this template
+- Service ID: `pgadmin4`
+- Upstream package: `pgadmin4==9.14`
+- Runtime provider: `@python`
+- Default port: `8510`
+- Healthcheck: `GET http://127.0.0.1:${SERVICE_PORT}/healthcheck`
+- Dependencies: `@python`, `postgres`
+- First release platform: Windows `win32`
 
-Recommended flow:
+The service is disabled by default because database ownership, credentials, and retention belong to the consuming app. Copy the released `service.json` into your app's `services/pgadmin4/service.json`, set it enabled when you want it in that app, and include the PostgreSQL service it should connect to.
 
-1. Create a new repo from this GitHub template.
-2. Rename the sample service files/content for the real service.
-3. Replace the sample runtime payload with the real service payload.
-4. Update `service.json`, `verify/service-harness.json`, and the docs for the new service.
-5. Run the local package + test flow.
-6. Wire the repo into the real released `service-lasso-harness` binary once that integration path is enabled.
+## Release Artifacts
 
-## Quick start
+Pushes to `main` create a GitHub release named with the Service Lasso version pattern:
 
-### Local package
-
-```powershell
-pwsh -NoLogo -NoProfile -File .\scripts\package.ps1
+```text
+yyyy.m.d-<shortsha>
 ```
 
-### Local tests
+The release contains:
+
+- `lasso-pgadmin4-9.14-win32.zip`
+- `service.json`
+- `SHA256SUMS.txt`
+
+## Local Validation
+
+Static validation works on any machine with Node:
 
 ```powershell
-pwsh -NoLogo -NoProfile -File .\scripts\test.ps1
+npm test
 ```
 
-## Start here for deeper design context
+Full package/start validation requires Python 3.11, matching the current `@python` provider baseline:
 
-Read in this order if you need the underlying design/spec context:
+```powershell
+$env:PYTHON='python'
+npm run package
+npm run release:verify
+```
 
-1. `docs/openspec-drafts/SPEC-SERVICE-TEMPLATE-REPO.md`
-2. `docs/openspec-drafts/OPENSPEC-TRACKER.md`
-3. `docs/service-contract.md`
-4. `docs/service-json-reference.md`
-5. `docs/packaging.md`
-6. `docs/validation.md`
-7. `docs/reference/adjacent/SPEC-SERVICE-LASSO-HARNESS.md`
+CI installs Python 3.11 and runs the full package plus healthcheck smoke.
 
-## What is here
+## Runtime Notes
 
-### OpenSpec drafts
-- `docs/openspec-drafts/SPEC-SERVICE-TEMPLATE-REPO.md`
-- `docs/openspec-drafts/OPENSPEC-TRACKER.md`
-
-### Supporting reference/planning docs
-- `docs/service-contract.md`
-- `docs/service-json-reference.md`
-- `docs/packaging.md`
-- `docs/validation.md`
-- `docs/reference/SERVICE-TEMPLATE-REPO.md`
-- `docs/reference/SERVICE-STRUCTURE-REVIEW.md`
-- `docs/reference/PROPOSED-CODEBASE-STRUCTURE.md`
-- `docs/reference/DECISION-CONTEXT.md`
-- `docs/reference/shared-runtime/QUESTION-LIST-AND-CODE-VALIDATION.md`
-- `docs/reference/shared-runtime/ARCHITECTURE-DECISIONS.md`
-- `docs/reference/shared-runtime/SERVICE-MANAGER-BEHAVIOR.md`
-- `docs/reference/adjacent/SPEC-SERVICE-LASSO-HARNESS.md`
-- `docs/reference/EXAMPLE-REPO-TREE.md`
-- `docs/reference/EXAMPLE-service.json`
-- `docs/reference/EXAMPLE-service-harness.json`
-- `docs/reference/EXAMPLE-verify.ps1`
-- `docs/reference/EXAMPLE-verify.sh`
-
-## Purpose
-
-This repo is the canonical starting point for Service Lasso service repos.
-
-Its role is to define:
-- one-service-per-repo expectations
-- service repo layout
-- service author documentation expectations
-- sample service expectations
-- packaging/release expectations
-- validation-harness integration expectations
-
-## Current status
-
-This repo is usable now as a starter template.
-
-It currently includes:
-- actual starter repo files (`service.json`, `verify/`, `scripts/`, `runtime/`, `config/`, `.github/workflows/`)
-- a tracked example `services/` inventory for downstream app/reference repos
-- a packaged first-pass sample artifact at `dist/echo-service-win32.zip`
-- a starter multi-OS GitHub Actions workflow that packages release archives and runs basic tests
-- starter harness-contract files and thin verify wrappers
-- supporting reference/spec docs for deeper design work
-
-Important current validation note:
-- the pipeline now downloads and invokes the released `service-lasso-harness` binary in CI
-- it still keeps the starter local package/test flow alongside harness verification
-- the current harness version is pinned in workflow config and can be advanced intentionally over time
-
-Important current manifest note:
-- the bounded first-pass core runtime now expects service release/install metadata to live directly in `service.json`
-- the current template example uses a bounded `artifact.kind`, `artifact.source`, and `artifact.platforms` shape to show that direction explicitly
-- bundled app artifacts mean the app package step has already acquired service archives into `services/<service-id>/.state/artifacts/<tag>/<assetName>` so first run can install without downloading those archives
-
-## Baseline app inventory rule
-
-This repo still models the canonical one-service-per-repo contract through the root `service.json`.
-
-In addition, it now carries a tracked example `services/` inventory to show what app/reference repos should own when they embed Service Lasso.
-
-Current baseline inventory:
-- `services/echo-service/service.json`
-- `services/@serviceadmin/service.json`
-- `services/@node/service.json`
-- `services/@localcert/service.json`
-- `services/@nginx/service.json`
-- `services/@traefik/service.json`
-
-Important rule:
-- app/reference repos should own the exact `services/` manifests for the services they intend to manage
-- if an app repo includes `@serviceadmin`, it should also include the manifests needed to satisfy Service Admin's declared service dependencies
-- core Service Lasso services use the `@` prefix: `@node`, `@localcert`, `@nginx`, `@traefik`, and `@serviceadmin`; `echo-service` stays unprefixed because it is the sample/test managed service
-- environment settings like `VITE_SERVICE_LASSO_API_BASE_URL` still belong in app/runtime config, not as extra service manifests
+The packaged launcher creates the pgAdmin data directory under `${SERVICE_DATA_PATH}`, injects the packaged Python dependencies into `PYTHONPATH`, exposes `/healthcheck`, and starts pgAdmin on `${SERVICE_PORT}`.
