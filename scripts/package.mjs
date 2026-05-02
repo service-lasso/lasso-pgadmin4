@@ -188,11 +188,19 @@ def main():
     builtins.SERVER_MODE = False
 
     os.chdir(pgadmin_root)
+    from flask import jsonify, request
     from pgAdmin4 import app as application
+
+    def service_lasso_healthcheck_before_request():
+        if request.path == "/healthcheck":
+            return jsonify({"ok": True, "service": "pgadmin4"}), 200
+        return None
+
+    application.before_request_funcs.setdefault(None, []).insert(0, service_lasso_healthcheck_before_request)
 
     @application.route("/healthcheck")
     def service_lasso_healthcheck():
-        return {"ok": True, "service": "pgadmin4"}, 200
+        return jsonify({"ok": True, "service": "pgadmin4"}), 200
 
     host = os.environ.get("PGADMIN_HOST", "127.0.0.1")
     port = int(os.environ.get("SERVICE_PORT") or os.environ.get("PGADMIN_PORT") or "8510")
