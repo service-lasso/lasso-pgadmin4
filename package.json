@@ -1,0 +1,13 @@
+{
+  "name": "lasso-pgadmin4",
+  "version": "9.14.0",
+  "private": true,
+  "description": "Release-backed pgAdmin4 service package for Service Lasso.",
+  "license": "Apache-2.0",
+  "type": "module",
+  "scripts": {
+    "package": "node scripts/package.mjs",
+    "test": "node scripts/verify.mjs --static",
+    "release:verify": "node scripts/verify.mjs"
+  }
+}

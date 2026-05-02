@@ -1,0 +1,2 @@
+loguru==0.7.3
+pgadmin4==9.14

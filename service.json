@@ -1,134 +1,119 @@
 {
-  "id": "echo-service",
-  "name": "Echo Service",
-  "description": "Minimal sample service used to prove the service-template contract.",
-  "enabled": true,
-  "version": "0.1.0",
-  "logoutput": true,
-  "icon": [
+  "id": "pgadmin4",
+  "name": "pgAdmin 4",
+  "description": "Release-backed pgAdmin 4 web UI for app-owned PostgreSQL services.",
+  "version": "9.14",
+  "enabled": false,
+  "execservice": "@python",
+  "ports": {
+    "service": 8510
+  },
+  "env": {
+    "PGADMIN_HOST": "127.0.0.1",
+    "PGADMIN_PORT": "${SERVICE_PORT}",
+    "PGADMIN_SCRIPT_HOME": "${SERVICE_ARTIFACT_ROOT}/python-packages/pgadmin4",
+    "DATA_DIR": "${SERVICE_DATA_PATH}",
+    "PGADMIN_SERVER_MODE": "OFF",
+    "PGADMIN_DEFAULT_EMAIL": "admin@service-lasso.local",
+    "PGADMIN_DEFAULT_PASSWORD": "service-lasso",
+    "CONSOLE_LOG_LEVEL": "INFO",
+    "FILE_LOG_LEVEL": "INFO",
+    "PYTHONUTF8": "1"
+  },
+  "globalenv": {
+    "PGADMIN_URL": "http://${PGADMIN_HOST}:${PGADMIN_PORT}",
+    "PGADMIN_PORT": "${PGADMIN_PORT}"
+  },
+  "urls": [
     {
-      "provider": "lucide",
-      "name": "terminal"
+      "label": "pgAdmin UI",
+      "url": "http://${PGADMIN_HOST}:${PGADMIN_PORT}",
+      "kind": "local"
+    },
+    {
+      "label": "health",
+      "url": "http://${PGADMIN_HOST}:${PGADMIN_PORT}/healthcheck",
+      "kind": "local"
     }
   ],
-  "servicetype": 50,
-  "servicelocation": 10,
-  "logo": [],
-  "logs": {
-    "default": {
-      "path": "logs/echo-service.log"
-    }
-  },
-  "meta": {
-    "developers": [
-      {
-        "name": "Service Lasso contributors"
-      }
-    ],
-    "license": "Apache-2.0",
-    "repository": {
-      "type": "git",
-      "url": "https://github.com/service-lasso/service-template.git"
-    },
-    "websiteUrl": "https://github.com/service-lasso/service-template",
-    "documentationUrl": "https://github.com/service-lasso/service-template/blob/main/README.md",
-    "issuesUrl": "https://github.com/service-lasso/service-template/issues",
-    "support": {
-      "issuesUrl": "https://github.com/service-lasso/service-template/issues"
-    },
-    "links": {
-      "repository": "https://github.com/service-lasso/service-template",
-      "issues": "https://github.com/service-lasso/service-template/issues",
-      "documentation": "https://github.com/service-lasso/service-template/blob/main/README.md"
-    },
-    "tags": [
-      "service-lasso",
-      "template",
-      "example-service"
-    ]
-  },
   "artifact": {
     "kind": "archive",
     "source": {
       "type": "github-release",
-      "repo": "service-lasso/service-template",
+      "repo": "service-lasso/lasso-pgadmin4",
       "channel": "latest"
     },
     "platforms": {
       "win32": {
-        "assetName": "echo-service-win32.zip",
+        "assetName": "lasso-pgadmin4-9.14-win32.zip",
         "archiveType": "zip",
-        "command": "./echo-service.exe",
-        "args": []
-      },
-      "darwin": {
-        "assetName": "echo-service-darwin.tar.gz",
-        "archiveType": "tar.gz",
-        "command": "./echo-service",
-        "args": []
-      },
-      "linux": {
-        "assetName": "echo-service-linux.tar.gz",
-        "archiveType": "tar.gz",
-        "command": "./echo-service",
-        "args": []
-      },
-      "default": {
-        "assetName": "echo-service-win32.zip",
-        "archiveType": "zip",
-        "command": "./echo-service.exe",
+        "command": "./lasso-pgadmin4.py",
         "args": []
       }
     }
   },
-  "actions": {
-    "install": {
-      "description": "Acquire or unpack the packaged echo-service runtime artifact.",
-      "mode": "converge-install",
-      "idempotent": true
-    },
-    "config": {
-      "description": "Materialize deployment-local echo-service config and env values.",
-      "mode": "converge-config",
-      "idempotent": true
-    },
-    "update": {
-      "description": "Apply a newer release artifact and reconcile update-time changes before restart.",
-      "mode": "converge-update",
-      "idempotent": true
-    },
-    "start": {
-      "description": "Start the sample echo service.",
-      "mode": "runtime-start",
-      "idempotent": true
-    },
-    "stop": {
-      "description": "Stop the sample echo service gracefully.",
-      "mode": "runtime-stop",
-      "idempotent": true
-    },
-    "restart": {
-      "description": "Restart the sample echo service after config or update changes.",
-      "mode": "runtime-restart",
-      "idempotent": false
-    },
-    "rollback": {
-      "description": "Restore the previously deployed artifact if an update fails validation.",
-      "mode": "state-rollback",
-      "idempotent": false
+  "commandline": {
+    "win32": "${SERVICE_ARTIFACT_ROOT}/lasso-pgadmin4.py"
+  },
+  "setup": {
+    "steps": {
+      "prepare-data": {
+        "description": "Create pgAdmin runtime data directories and validate packaged pgAdmin modules.",
+        "execservice": "@python",
+        "commandline": {
+          "win32": "${SERVICE_ARTIFACT_ROOT}/lasso-pgadmin4.py --setup"
+        },
+        "timeoutSeconds": 120,
+        "rerun": "ifMissing"
+      }
     }
   },
-  "execconfig": {
-    "serviceorder": 100,
-    "serviceport": 0,
-    "execcwd": "runtime",
-    "executable": "echo-service",
-    "env": {
-      "ECHO_MESSAGE": "hello from service-template"
-    },
-    "depend_on": [],
-    "healthcheck": {
-      "type": "process"
+  "install": {
+    "files": [
+      {
+        "path": "./runtime/data/.keep",
+        "content": ""
+      },
+      {
+        "path": "./runtime/logs/.keep",
+        "content": ""
+      }
+    ]
+  },
+  "logs": {
+    "default": {
+      "path": "runtime/data/pgadmin4.log"
     }
+  },
+  "healthcheck": {
+    "type": "http",
+    "url": "http://${PGADMIN_HOST}:${PGADMIN_PORT}/healthcheck",
+    "expected_status": 200,
+    "retries": 180,
+    "interval": 500
+  },
+  "depend_on": [
+    "@python",
+    "postgres"
+  ],
+  "updates": {
+    "enabled": true,
+    "mode": "notify",
+    "track": "latest",
+    "checkIntervalSeconds": 86400
+  },
+  "meta": {
+    "repository": {
+      "type": "git",
+      "url": "https://github.com/service-lasso/lasso-pgadmin4.git"
+    },
+    "documentationUrl": "https://github.com/service-lasso/lasso-pgadmin4/blob/main/README.md",
+    "issuesUrl": "https://github.com/service-lasso/lasso-pgadmin4/issues",
+    "tags": [
+      "service-lasso",
+      "postgres",
+      "pgadmin4",
+      "database-admin"
+    ]
   }
 }
