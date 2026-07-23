@@ -95,8 +95,26 @@ async function staticChecks() {
     throw new Error("pgAdmin4 must declare its app-owned postgres dependency.");
   }
 
-  if (serviceManifest.healthcheck?.type !== "http" || serviceManifest.ports?.service !== 8510) {
-    throw new Error(`pgAdmin4 service.json health/ports drifted: ${JSON.stringify(serviceManifest.healthcheck)}`);
+  const healthchecks = serviceManifest.healthchecks;
+  if (serviceManifest.healthcheck !== undefined) {
+    throw new Error("pgAdmin4 service.json must use canonical healthchecks[] instead of singular healthcheck.");
+  }
+
+  if (!Array.isArray(healthchecks) || healthchecks.length !== 1) {
+    throw new Error(`pgAdmin4 service.json must declare exactly one canonical healthcheck: ${JSON.stringify(healthchecks)}`);
+  }
+
+  const [httpHealth] = healthchecks;
+  if (
+    httpHealth.id !== "http-health" ||
+    httpHealth.type !== "http" ||
+    httpHealth.url !== "http://${PGADMIN_HOST}:${PGADMIN_PORT}/healthcheck" ||
+    httpHealth.expected_status !== 200 ||
+    httpHealth.retries !== 180 ||
+    httpHealth.interval !== 500 ||
+    serviceManifest.ports?.service !== 8510
+  ) {
+    throw new Error(`pgAdmin4 service.json health/ports drifted: ${JSON.stringify({ healthchecks, ports: serviceManifest.ports })}`);
   }
 
   if (serviceManifest.setup?.steps?.["prepare-data"]?.execservice !== "@python") {

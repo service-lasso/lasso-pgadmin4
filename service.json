@@ -85,13 +85,16 @@
       "path": "runtime/data/pgadmin4.log"
     }
   },
-  "healthcheck": {
-    "type": "http",
-    "url": "http://${PGADMIN_HOST}:${PGADMIN_PORT}/healthcheck",
-    "expected_status": 200,
-    "retries": 180,
-    "interval": 500
-  },
+  "healthchecks": [
+    {
+      "id": "http-health",
+      "type": "http",
+      "url": "http://${PGADMIN_HOST}:${PGADMIN_PORT}/healthcheck",
+      "expected_status": 200,
+      "retries": 180,
+      "interval": 500
+    }
+  ],
   "depend_on": [
     "@python",
     "postgres"
