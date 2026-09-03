@@ -5,12 +5,45 @@
   "version": "9.14",
   "enabled": false,
   "execservice": "@python",
-  "ports": {
-    "service": 8510
-  },
+  "endpoints": [
+    {
+      "id": "ui",
+      "kind": "network",
+      "label": "pgAdmin UI",
+      "direction": "inbound",
+      "transport": "tcp",
+      "protocol": "http",
+      "bind": "127.0.0.1",
+      "port": {
+        "default": 8510,
+        "strategy": "preferred"
+      },
+      "exposure": "local",
+      "required": true,
+      "primary": true
+    },
+    {
+      "id": "ui_url",
+      "kind": "url",
+      "label": "pgAdmin UI",
+      "target": "ui",
+      "url": "http://${endpoint.ui.bind}:${endpoint.ui.port}/",
+      "exposure": "local",
+      "primary": true
+    },
+    {
+      "id": "health",
+      "kind": "url",
+      "label": "Health",
+      "target": "ui",
+      "url": "http://${endpoint.ui.bind}:${endpoint.ui.port}/healthcheck",
+      "exposure": "local",
+      "required": true
+    }
+  ],
   "env": {
-    "PGADMIN_HOST": "127.0.0.1",
-    "PGADMIN_PORT": "${SERVICE_PORT}",
+    "PGADMIN_HOST": "${endpoint.ui.bind}",
+    "PGADMIN_PORT": "${endpoint.ui.port}",
     "PGADMIN_SCRIPT_HOME": "${SERVICE_ARTIFACT_ROOT}/python-packages/pgadmin4",
     "DATA_DIR": "${SERVICE_DATA_PATH}",
     "PGADMIN_SERVER_MODE": "OFF",
@@ -21,21 +54,9 @@
     "PYTHONUTF8": "1"
   },
   "globalenv": {
-    "PGADMIN_URL": "http://${PGADMIN_HOST}:${PGADMIN_PORT}",
-    "PGADMIN_PORT": "${PGADMIN_PORT}"
+    "PGADMIN_URL": "${endpoint.ui_url.url}",
+    "PGADMIN_PORT": "${endpoint.ui.port}"
   },
-  "urls": [
-    {
-      "label": "pgAdmin UI",
-      "url": "http://${PGADMIN_HOST}:${PGADMIN_PORT}",
-      "kind": "local"
-    },
-    {
-      "label": "health",
-      "url": "http://${PGADMIN_HOST}:${PGADMIN_PORT}/healthcheck",
-      "kind": "local"
-    }
-  ],
   "artifact": {
     "kind": "archive",
     "source": {
@@ -89,7 +110,7 @@
     {
       "id": "http-health",
       "type": "http",
-      "url": "http://${PGADMIN_HOST}:${PGADMIN_PORT}/healthcheck",
+      "url": "http://${endpoint.ui.bind}:${endpoint.ui.port}/healthcheck",
       "expected_status": 200,
       "retries": 180,
       "interval": 500

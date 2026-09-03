@@ -18,7 +18,7 @@ The service runs through `@python`, so consuming apps must include the `@python`
 
 The `prepare-data` setup step runs `lasso-pgadmin4.py --setup` through `@python`. It creates the service data directories and validates that the packaged pgAdmin modules are present.
 
-The start command runs `lasso-pgadmin4.py` through `@python`. The launcher injects packaged dependencies into `PYTHONPATH`, exposes `/healthcheck`, and starts pgAdmin on `${SERVICE_PORT}`.
+The start command runs `lasso-pgadmin4.py` through `@python`. The launcher injects packaged dependencies into `PYTHONPATH`, exposes `/healthcheck`, and starts pgAdmin on the canonical `ui` network endpoint. Manifest env aliases `PGADMIN_HOST` and `PGADMIN_PORT` resolve from `${endpoint.ui.bind}` and `${endpoint.ui.port}`.
 
 ## Consumer Responsibilities
 
