@@ -9,8 +9,8 @@ It is intended for apps that already include a PostgreSQL service manifest, usua
 - Service ID: `pgadmin4`
 - Upstream package: `pgadmin4==9.14`
 - Runtime provider: `@python`
-- Default port: `8510`
-- Healthcheck: `GET http://127.0.0.1:${SERVICE_PORT}/healthcheck`
+- Default UI port: `8510` on canonical endpoint `ui`
+- Healthcheck: `GET http://${endpoint.ui.bind}:${endpoint.ui.port}/healthcheck`
 - Dependencies: `@python`, `postgres`
 - First release platform: Windows `win32`
 
@@ -50,4 +50,4 @@ CI installs Python 3.11 and runs the full package plus healthcheck smoke.
 
 ## Runtime Notes
 
-The packaged launcher creates the pgAdmin data directory under `${SERVICE_DATA_PATH}`, injects the packaged Python dependencies into `PYTHONPATH`, exposes `/healthcheck`, and starts pgAdmin on `${SERVICE_PORT}`.
+The packaged launcher creates the pgAdmin data directory under `${SERVICE_DATA_PATH}`, injects the packaged Python dependencies into `PYTHONPATH`, exposes `/healthcheck`, and starts pgAdmin on the resolved `ui` network endpoint (`${endpoint.ui.port}`, aliased as `PGADMIN_PORT`).

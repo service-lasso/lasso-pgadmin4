@@ -99,22 +99,51 @@ async function staticChecks() {
   if (serviceManifest.healthcheck !== undefined) {
     throw new Error("pgAdmin4 service.json must use canonical healthchecks[] instead of singular healthcheck.");
   }
+  if (serviceManifest.ports !== undefined || serviceManifest.urls !== undefined) {
+    throw new Error("pgAdmin4 service.json must use canonical endpoints[] instead of ports or urls.");
+  }
 
   if (!Array.isArray(healthchecks) || healthchecks.length !== 1) {
     throw new Error(`pgAdmin4 service.json must declare exactly one canonical healthcheck: ${JSON.stringify(healthchecks)}`);
   }
 
   const [httpHealth] = healthchecks;
+  const endpoints = Array.isArray(serviceManifest.endpoints) ? serviceManifest.endpoints : [];
+  const ui = endpoints.find((entry) => entry && entry.id === "ui");
+  const uiUrl = endpoints.find((entry) => entry && entry.id === "ui_url");
+  const healthUrl = endpoints.find((entry) => entry && entry.id === "health");
   if (
     httpHealth.id !== "http-health" ||
     httpHealth.type !== "http" ||
-    httpHealth.url !== "http://${PGADMIN_HOST}:${PGADMIN_PORT}/healthcheck" ||
+    httpHealth.url !== "http://${endpoint.ui.bind}:${endpoint.ui.port}/healthcheck" ||
     httpHealth.expected_status !== 200 ||
     httpHealth.retries !== 180 ||
     httpHealth.interval !== 500 ||
-    serviceManifest.ports?.service !== 8510
+    endpoints.length !== 3 ||
+    ui?.kind !== "network" ||
+    ui?.transport !== "tcp" ||
+    ui?.protocol !== "http" ||
+    ui?.bind !== "127.0.0.1" ||
+    ui?.port?.default !== 8510 ||
+    ui?.port?.strategy !== "preferred" ||
+    uiUrl?.kind !== "url" ||
+    uiUrl?.target !== "ui" ||
+    uiUrl?.url !== "http://${endpoint.ui.bind}:${endpoint.ui.port}/" ||
+    healthUrl?.kind !== "url" ||
+    healthUrl?.target !== "ui" ||
+    healthUrl?.url !== "http://${endpoint.ui.bind}:${endpoint.ui.port}/healthcheck" ||
+    serviceManifest.env?.PGADMIN_HOST !== "${endpoint.ui.bind}" ||
+    serviceManifest.env?.PGADMIN_PORT !== "${endpoint.ui.port}" ||
+    serviceManifest.globalenv?.PGADMIN_URL !== "${endpoint.ui_url.url}"
   ) {
-    throw new Error(`pgAdmin4 service.json health/ports drifted: ${JSON.stringify({ healthchecks, ports: serviceManifest.ports })}`);
+    throw new Error(
+      `pgAdmin4 service.json health/endpoints drifted: ${JSON.stringify({
+        healthchecks,
+        endpoints,
+        env: serviceManifest.env,
+        globalenv: serviceManifest.globalenv,
+      })}`,
+    );
   }
 
   if (serviceManifest.setup?.steps?.["prepare-data"]?.execservice !== "@python") {
